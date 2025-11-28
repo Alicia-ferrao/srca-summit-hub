@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, FileText, BarChart3, Shield } from "lucide-react";
+import { UserPlus, FileText, BarChart3, Shield, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +30,42 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation Menu */}
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border shadow-sm">
+        <div className="container max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold">SRCA</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => navigate("/register")}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Registar
+              </Button>
+              <Button
+                onClick={() => navigate("/submit")}
+                className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Submeter
+              </Button>
+              <Button
+                onClick={() => navigate("/admin")}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                Admin
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-secondary/10" />
@@ -176,7 +212,7 @@ export default function Index() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
-                <p>✓ Tema escuro vibrante</p>
+                <p>✓ Tema moderno e elegante</p>
                 <p>✓ Microinterações suaves</p>
                 <p>✓ Totalmente responsivo</p>
               </CardContent>
