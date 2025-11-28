@@ -83,26 +83,6 @@ export default function Index() {
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
               Plataforma moderna para gestão de participantes e submissão de comunicações científicas
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-              <Button
-                size="lg"
-                onClick={() => navigate("/register")}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
-              >
-                <UserPlus className="mr-2 h-5 w-5" />
-                Registar Participante
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate("/submit")}
-                className="bg-secondary hover:bg-secondary/90 text-secondary-foreground border-secondary text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all"
-              >
-                <FileText className="mr-2 h-5 w-5" />
-                Submeter Comunicação
-              </Button>
-            </div>
           </div>
         </div>
       </section>
@@ -221,32 +201,17 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-primary/10 to-secondary/10">
-        <div className="container max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl font-bold">Pronto para começar?</h2>
-          <p className="text-lg text-muted-foreground">
-            Registe-se como participante ou submeta a sua comunicação científica
+      {/* Footer */}
+      <footer className="py-8 px-4 border-t border-border bg-card/30">
+        <div className="container max-w-6xl mx-auto text-center">
+          <p className="text-sm text-muted-foreground">
+            © 2024 SRCA - Sistema de Registo de Conferências Automático
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate("/register")}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Registar Agora
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => navigate("/admin")}
-              className="border-border hover:bg-muted"
-            >
-              Acesso Admin
-            </Button>
-          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Plataforma conforme com RGPD
+          </p>
         </div>
-      </section>
+      </footer>
     </div>
   );
 }
