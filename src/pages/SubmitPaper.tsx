@@ -82,15 +82,21 @@ export default function SubmitPaper() {
     setUploadProgress(0);
 
     try {
-      // Verificar se o participante existe
+      // Verificar se o participante existe e é investigador
       const { data: participante, error: participanteError } = await supabase
         .from("participantes")
-        .select("id")
+        .select("id, tipoInscricao")
         .eq("email", data.participanteEmail)
         .single();
 
       if (participanteError || !participante) {
         toast.error("Email não encontrado. Por favor registe-se primeiro.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (participante.tipoInscricao !== "investigador") {
+        toast.error("Apenas investigadores podem submeter comunicações.");
         setIsSubmitting(false);
         return;
       }
