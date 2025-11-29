@@ -190,16 +190,16 @@ export default function Index() {
               <CardHeader className="relative z-10">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <Zap className="h-5 w-5 text-primary" />
+                    <UserPlus className="h-5 w-5 text-primary" />
                   </div>
-                  <CardTitle>Registo Simplificado</CardTitle>
+                  <CardTitle>Para Participantes</CardTitle>
                 </div>
                 <CardDescription className="text-base">
-                  Formulário intuitivo com validação em tempo real e conformidade RGPD
+                  Registe-se facilmente e receba confirmação automática por email. Acesso imediato a todos os recursos da conferência.
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10 space-y-2">
-                {["Validação automática", "Email de confirmação", "Proteção de dados"].map((item, i) => (
+                {["Registo rápido e seguro", "Confirmação automática por email", "Acesso ao material da conferência"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     <span>{item}</span>
@@ -216,14 +216,14 @@ export default function Index() {
                   <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
                     <FileText className="h-5 w-5 text-accent" />
                   </div>
-                  <CardTitle>Submissão Fácil</CardTitle>
+                  <CardTitle>Para Investigadores</CardTitle>
                 </div>
                 <CardDescription className="text-base">
-                  Upload de ficheiros PDF com drag & drop e validação automática
+                  Submeta suas comunicações científicas de forma simples. Sistema de revisão automático e notificações em tempo real.
                 </CardDescription>
               </CardHeader>
               <CardContent className="relative z-10 space-y-2">
-                {["Upload até 10 MB", "Validação de formato", "Notificações automáticas"].map((item, i) => (
+                {["Upload de documentos PDF", "Revisão e feedback automático", "Notificações por email"].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="h-4 w-4 text-accent" />
                     <span>{item}</span>
