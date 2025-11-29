@@ -2,36 +2,19 @@ import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, Upload, FileText, X, AlertCircle } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-const comunicacaoSchema = z.object({
-  titulo: z.string()
-    .min(5, "Título deve ter pelo menos 5 caracteres")
-    .max(120, "Título deve ter no máximo 120 caracteres"),
-  resumo: z.string()
-    .min(50, "Resumo deve ter pelo menos 50 caracteres")
-    .max(2000, "Resumo deve ter no máximo 2000 caracteres"),
-  autores: z.string()
-    .min(2, "Autores é obrigatório"),
-  areaTematica: z.string()
-    .min(2, "Área temática é obrigatória"),
-  participanteEmail: z.string()
-    .email("Email inválido")
-    .toLowerCase(),
-});
-
-type ComunicacaoForm = z.infer<typeof comunicacaoSchema>;
+import { comunicacaoSchema, type ComunicacaoForm, businessValidations } from "@/services/validationServices";
+import { participantesService, comunicacoesService, emailService } from "@/lib/supabase";
+import { useApp } from "@/contexts/AppContext";
 
 export default function SubmitPaper() {
   const navigate = useNavigate();
@@ -40,6 +23,7 @@ export default function SubmitPaper() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [emailWarning, setEmailWarning] = useState<string | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const { refreshStats } = useApp();
 
   const { register, handleSubmit, formState: { errors }, watch } = useForm<ComunicacaoForm>({
     resolver: zodResolver(comunicacaoSchema),
@@ -57,21 +41,11 @@ export default function SubmitPaper() {
 
       setIsCheckingEmail(true);
       try {
-        const { data: participante, error } = await supabase
-          .from("participantes")
-          .select("tipoInscricao, nomeCompleto")
-          .eq("email", emailValue.toLowerCase())
-          .maybeSingle();
-
-        if (error) {
-          console.error("Erro ao verificar email:", error);
-          setEmailWarning(null);
-          return;
-        }
+        const participante = await participantesService.getByEmail(emailValue);
 
         if (!participante) {
           setEmailWarning("Email não encontrado. Por favor registe-se primeiro.");
-        } else if (participante.tipoInscricao !== "investigador") {
+        } else if (!businessValidations.canSubmitComunicacao(participante.tipoInscricao || "")) {
           setEmailWarning(
             `Atenção: Apenas investigadores podem submeter comunicações. O seu tipo de inscrição é "${participante.tipoInscricao}".`
           );
@@ -92,20 +66,15 @@ export default function SubmitPaper() {
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (!file) return;
-
-    if (file.type !== "application/pdf") {
-      toast.error("Apenas ficheiros PDF são permitidos");
-      return;
+    if (file) {
+      const errorMessage = businessValidations.getFileErrorMessage(file);
+      if (errorMessage) {
+        toast.error(errorMessage);
+        return;
+      }
+      setSelectedFile(file);
+      toast.success("Ficheiro selecionado com sucesso");
     }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Ficheiro não pode exceder 10 MB");
-      return;
-    }
-
-    setSelectedFile(file);
-    toast.success(`Ficheiro "${file.name}" selecionado`);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -131,70 +100,48 @@ export default function SubmitPaper() {
 
     try {
       // Verificar se o participante existe e é investigador
-      const { data: participante, error: participanteError } = await supabase
-        .from("participantes")
-        .select("id, tipoInscricao")
-        .eq("email", data.participanteEmail)
-        .single();
+      const participante = await participantesService.getByEmail(data.participanteEmail);
 
-      if (participanteError || !participante) {
-        toast.error("Email não encontrado. Por favor registe-se primeiro.");
-        setIsSubmitting(false);
+      if (!participante) {
+        toast.error("Participante não encontrado. Por favor registe-se primeiro.");
         return;
       }
 
-      if (participante.tipoInscricao !== "investigador") {
-        toast.error("Apenas investigadores podem submeter comunicações.");
-        setIsSubmitting(false);
+      if (!businessValidations.canSubmitComunicacao(participante.tipoInscricao || "")) {
+        toast.error("Apenas investigadores podem submeter comunicações");
         return;
       }
+
+      setUploadProgress(20);
 
       // Upload do ficheiro
-      const fileExt = "pdf";
-      const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `comunicacoes/${fileName}`;
+      const fileData = await comunicacoesService.uploadFile(selectedFile, setUploadProgress);
 
-      setUploadProgress(50);
+      // Criar registo da comunicação
+      const comunicacao = await comunicacoesService.create({
+        titulo: data.titulo,
+        resumo: data.resumo,
+        autores: data.autores,
+        areaTematica: data.areaTematica,
+        participanteId: participante.id,
+        ficheiroUrl: fileData.url,
+        ficheiroNome: fileData.name,
+        ficheiroTipo: fileData.type,
+        ficheiroTamanho: fileData.size,
+      });
 
-      const { error: uploadError } = await supabase.storage
-        .from("comunicacoes")
-        .upload(filePath, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      setUploadProgress(75);
-
-      // Obter URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from("comunicacoes")
-        .getPublicUrl(filePath);
-
-      // Inserir comunicação
-      const { data: comunicacao, error: insertError } = await supabase
-        .from("comunicacoes")
-        .insert({
-          titulo: data.titulo,
-          resumo: data.resumo,
-          autores: data.autores,
-          areaTematica: data.areaTematica,
-          participanteId: participante.id,
-          ficheiroUrl: publicUrl,
-          ficheiroNome: selectedFile.name,
-          ficheiroTipo: selectedFile.type,
-          ficheiroTamanho: selectedFile.size,
-          estado: "submetida",
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      setUploadProgress(100);
+      // Enviar email de confirmação
+      await emailService.sendConfirmation("comunicacao", {
+        titulo: data.titulo,
+        autores: data.autores,
+        participanteEmail: data.participanteEmail,
+      });
 
       toast.success("Comunicação submetida com sucesso!", {
         description: "Receberá um email de confirmação em breve.",
       });
 
+      await refreshStats();
       navigate(`/success/paper?id=${comunicacao.id}`);
     } catch (error) {
       console.error("Erro ao submeter comunicação:", error);
