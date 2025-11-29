@@ -23,7 +23,7 @@ const participantSchema = z.object({
   instituicao: z.string()
     .min(2, "Instituição deve ter pelo menos 2 caracteres")
     .max(80, "Instituição deve ter no máximo 80 caracteres"),
-  tipoInscricao: z.enum(["estudante", "investigador", "organizador", "convidado"]),
+  tipoInscricao: z.enum(["estudante", "organizador", "convidado"]),
   pais: z.string()
     .min(2, "País deve ter pelo menos 2 caracteres"),
   consentimentoRGPD: z.boolean()
@@ -157,7 +157,6 @@ export default function RegisterParticipant() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="estudante">Estudante</SelectItem>
-                    <SelectItem value="investigador">Investigador</SelectItem>
                     <SelectItem value="organizador">Organizador</SelectItem>
                     <SelectItem value="convidado">Convidado</SelectItem>
                   </SelectContent>
