@@ -49,10 +49,22 @@ export default function RegisterParticipant() {
       navigate(`/success/participant?id=${participant.id}`);
     } catch (error: any) {
       console.error("Erro ao registar participante:", error);
-      if (error.code === "23505") {
-        toast.error("Este email já está registado");
+      
+      // Verificar se é erro de email duplicado (pode vir de diferentes formas)
+      const errorMessage = error?.error || error?.message || "";
+      const isDuplicateEmail = 
+        error.code === "23505" || 
+        errorMessage.includes("já está registado") ||
+        errorMessage.includes("already exists");
+      
+      if (isDuplicateEmail) {
+        toast.error("Este email já está registado", {
+          description: "Por favor, use outro endereço de email.",
+        });
       } else {
-        toast.error("Erro ao processar o registo. Tente novamente.");
+        toast.error("Erro ao processar o registo", {
+          description: "Tente novamente. Se o problema persistir, contacte o suporte.",
+        });
       }
     } finally {
       setIsSubmitting(false);
