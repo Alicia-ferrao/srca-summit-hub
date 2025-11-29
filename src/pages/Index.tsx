@@ -2,31 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserPlus, FileText, BarChart3, Shield, Lock, Sparkles, Zap, CheckCircle2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useApp } from "@/contexts/AppContext";
 
 export default function Index() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({
-    participantes: 0,
-    comunicacoes: 0,
-  });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      const [participantesRes, comunicacoesRes] = await Promise.all([
-        supabase.from("participantes").select("id", { count: "exact", head: true }),
-        supabase.from("comunicacoes").select("id", { count: "exact", head: true }),
-      ]);
-
-      setStats({
-        participantes: participantesRes.count || 0,
-        comunicacoes: comunicacoesRes.count || 0,
-      });
-    };
-
-    fetchStats();
-  }, []);
+  const { participantesCount, comunicacoesCount } = useApp();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
@@ -147,7 +127,7 @@ export default function Index() {
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
-                <p className="text-4xl font-bold text-foreground">{stats.participantes}</p>
+                <p className="text-4xl font-bold text-foreground">{participantesCount}</p>
                 <p className="text-sm text-muted-foreground mt-2">Total registados</p>
               </CardContent>
             </Card>
@@ -166,7 +146,7 @@ export default function Index() {
                 </div>
               </CardHeader>
               <CardContent className="relative z-10">
-                <p className="text-4xl font-bold text-foreground">{stats.comunicacoes}</p>
+                <p className="text-4xl font-bold text-foreground">{comunicacoesCount}</p>
                 <p className="text-sm text-muted-foreground mt-2">Submetidas</p>
               </CardContent>
             </Card>

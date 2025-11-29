@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,31 +9,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Loader2, UserPlus } from "lucide-react";
-
-const participantSchema = z.object({
-  nomeCompleto: z.string()
-    .min(2, "Nome deve ter pelo menos 2 caracteres")
-    .max(80, "Nome deve ter no máximo 80 caracteres"),
-  email: z.string()
-    .email("Email inválido")
-    .toLowerCase(),
-  instituicao: z.string()
-    .min(2, "Instituição deve ter pelo menos 2 caracteres")
-    .max(80, "Instituição deve ter no máximo 80 caracteres"),
-  tipoInscricao: z.enum(["estudante", "investigador", "convidado"]),
-  pais: z.string()
-    .min(2, "País deve ter pelo menos 2 caracteres"),
-  consentimentoRGPD: z.boolean()
-    .refine((val) => val === true, "Consentimento RGPD é obrigatório"),
-});
-
-type ParticipantForm = z.infer<typeof participantSchema>;
+import { participantSchema, type ParticipantForm } from "@/services/validationServices";
+import { participantesService, emailService } from "@/lib/supabase";
+import { useApp } from "@/contexts/AppContext";
 
 export default function RegisterParticipant() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { refreshStats } = useApp();
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ParticipantForm>({
     resolver: zodResolver(participantSchema),
@@ -48,52 +31,29 @@ export default function RegisterParticipant() {
   const onSubmit = async (data: ParticipantForm) => {
     setIsSubmitting(true);
     try {
-      const { data: participant, error } = await supabase
-        .from("participantes")
-        .insert([{
-          nomeCompleto: data.nomeCompleto,
-          email: data.email,
-          instituicao: data.instituicao,
-          tipoInscricao: data.tipoInscricao,
-          pais: data.pais,
-          consentimentoRGPD: data.consentimentoRGPD,
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === "23505") {
-          toast.error("Este email já está registado");
-        } else {
-          throw error;
-        }
-        return;
-      }
+      const participant = await participantesService.create(data);
 
       // Enviar email de confirmação
-      try {
-        await supabase.functions.invoke('send-confirmation-email', {
-          body: {
-            nomeCompleto: data.nomeCompleto,
-            email: data.email,
-            instituicao: data.instituicao,
-            tipoInscricao: data.tipoInscricao,
-          }
-        });
-        console.log("Email de confirmação enviado com sucesso");
-      } catch (emailError) {
-        console.error("Erro ao enviar email de confirmação:", emailError);
-        // Não bloqueamos o registo se o email falhar
-      }
+      await emailService.sendConfirmation("participante", {
+        nomeCompleto: data.nomeCompleto,
+        email: data.email,
+        instituicao: data.instituicao,
+        tipoInscricao: data.tipoInscricao,
+      });
 
       toast.success("Registo concluído com sucesso!", {
         description: "Receberá um email de confirmação em breve.",
       });
-      
+
+      await refreshStats();
       navigate(`/success/participant?id=${participant.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao registar participante:", error);
-      toast.error("Erro ao processar o registo. Tente novamente.");
+      if (error.code === "23505") {
+        toast.error("Este email já está registado");
+      } else {
+        toast.error("Erro ao processar o registo. Tente novamente.");
+      }
     } finally {
       setIsSubmitting(false);
     }
