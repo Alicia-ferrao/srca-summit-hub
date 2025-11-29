@@ -31,9 +31,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Remover carregamento automático - stats carregados apenas no admin dashboard
+  // Carregar stats automaticamente ao inicializar
   useEffect(() => {
-    setIsLoading(false);
+    refreshStats();
   }, []);
 
   return (
