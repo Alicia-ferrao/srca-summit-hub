@@ -24,14 +24,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setParticipantesCount(pCount);
       setComunicacoesCount(cCount);
     } catch (error) {
-      console.error("Erro ao carregar estatísticas:", error);
+      // Silenciar erros - stats só disponíveis via admin dashboard
+      console.log("Stats only available via admin dashboard");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Remover carregamento automático - stats carregados apenas no admin dashboard
   useEffect(() => {
-    refreshStats();
+    setIsLoading(false);
   }, []);
 
   return (
