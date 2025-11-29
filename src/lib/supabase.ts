@@ -29,18 +29,16 @@ export type Comunicacao = {
 // Funções de persistência para Participantes
 export const participantesService = {
   async create(participante: Participante) {
-    const { data, error } = await supabase
-      .from("participantes")
-      .insert([{
+    const { data, error } = await supabase.functions.invoke("register-participant", {
+      body: {
         nomeCompleto: participante.nomeCompleto,
-        email: participante.email.toLowerCase(),
+        email: participante.email,
         instituicao: participante.instituicao,
         tipoInscricao: participante.tipoInscricao,
         pais: participante.pais,
         consentimentoRGPD: participante.consentimentoRGPD,
-      }])
-      .select()
-      .single();
+      },
+    });
 
     if (error) throw error;
     return data;
@@ -74,9 +72,8 @@ export const participantesService = {
 // Funções de persistência para Comunicações
 export const comunicacoesService = {
   async create(comunicacao: Comunicacao) {
-    const { data, error } = await supabase
-      .from("comunicacoes")
-      .insert([{
+    const { data, error } = await supabase.functions.invoke("submit-communication", {
+      body: {
         titulo: comunicacao.titulo,
         resumo: comunicacao.resumo,
         autores: comunicacao.autores,
@@ -86,10 +83,8 @@ export const comunicacoesService = {
         ficheiroNome: comunicacao.ficheiroNome,
         ficheiroTipo: comunicacao.ficheiroTipo,
         ficheiroTamanho: comunicacao.ficheiroTamanho,
-        estado: "submetida",
-      }])
-      .select()
-      .single();
+      },
+    });
 
     if (error) throw error;
     return data;
