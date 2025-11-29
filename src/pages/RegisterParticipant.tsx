@@ -70,6 +70,22 @@ export default function RegisterParticipant() {
         return;
       }
 
+      // Enviar email de confirmação
+      try {
+        await supabase.functions.invoke('send-confirmation-email', {
+          body: {
+            nomeCompleto: data.nomeCompleto,
+            email: data.email,
+            instituicao: data.instituicao,
+            tipoInscricao: data.tipoInscricao,
+          }
+        });
+        console.log("Email de confirmação enviado com sucesso");
+      } catch (emailError) {
+        console.error("Erro ao enviar email de confirmação:", emailError);
+        // Não bloqueamos o registo se o email falhar
+      }
+
       toast.success("Registo concluído com sucesso!", {
         description: "Receberá um email de confirmação em breve.",
       });
