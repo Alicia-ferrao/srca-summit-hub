@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,9 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Loader2, Upload, FileText, X } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, FileText, X, AlertCircle } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const comunicacaoSchema = z.object({
   titulo: z.string()
@@ -37,10 +38,57 @@ export default function SubmitPaper() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [emailWarning, setEmailWarning] = useState<string | null>(null);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ComunicacaoForm>({
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<ComunicacaoForm>({
     resolver: zodResolver(comunicacaoSchema),
   });
+
+  const emailValue = watch("participanteEmail");
+
+  // Verificar tipo de inscrição quando o email é alterado
+  useEffect(() => {
+    const checkEmailType = async () => {
+      if (!emailValue || !emailValue.includes("@")) {
+        setEmailWarning(null);
+        return;
+      }
+
+      setIsCheckingEmail(true);
+      try {
+        const { data: participante, error } = await supabase
+          .from("participantes")
+          .select("tipoInscricao, nomeCompleto")
+          .eq("email", emailValue.toLowerCase())
+          .maybeSingle();
+
+        if (error) {
+          console.error("Erro ao verificar email:", error);
+          setEmailWarning(null);
+          return;
+        }
+
+        if (!participante) {
+          setEmailWarning("Email não encontrado. Por favor registe-se primeiro.");
+        } else if (participante.tipoInscricao !== "investigador") {
+          setEmailWarning(
+            `Atenção: Apenas investigadores podem submeter comunicações. O seu tipo de inscrição é "${participante.tipoInscricao}".`
+          );
+        } else {
+          setEmailWarning(null);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar email:", error);
+        setEmailWarning(null);
+      } finally {
+        setIsCheckingEmail(false);
+      }
+    };
+
+    const timeoutId = setTimeout(checkEmailType, 500);
+    return () => clearTimeout(timeoutId);
+  }, [emailValue]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -248,6 +296,16 @@ export default function SubmitPaper() {
                 {errors.participanteEmail && (
                   <p className="text-sm text-destructive">{errors.participanteEmail.message}</p>
                 )}
+                {isCheckingEmail && (
+                  <p className="text-sm text-muted-foreground">A verificar...</p>
+                )}
+                {emailWarning && !isCheckingEmail && (
+                  <Alert variant={emailWarning.includes("Atenção") ? "default" : "destructive"} className="mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Aviso</AlertTitle>
+                    <AlertDescription>{emailWarning}</AlertDescription>
+                  </Alert>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -310,7 +368,7 @@ export default function SubmitPaper() {
               <Button
                 type="submit"
                 className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                disabled={isSubmitting || !selectedFile}
+                disabled={isSubmitting || !selectedFile || !!emailWarning || isCheckingEmail}
               >
                 {isSubmitting ? (
                   <>
