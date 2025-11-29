@@ -2,3 +2,9 @@ project_id = "enxrukmasntqqescqttg"
 
 [functions.send-confirmation-email]
 verify_jwt = false
+
+[functions.register-participant]
+verify_jwt = false
+
+[functions.submit-communication]
+verify_jwt = false
