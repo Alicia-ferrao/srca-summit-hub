@@ -116,7 +116,9 @@ export const comunicacoesService = {
   },
 
   async uploadFile(file: File, onProgress?: (progress: number) => void) {
-    const fileName = `${Date.now()}_${file.name}`;
+    // Sanitizar nome do ficheiro removendo espaços e caracteres especiais
+    const sanitizedName = file.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+    const fileName = `${Date.now()}_${sanitizedName}`;
     
     // Simulate progress for better UX
     if (onProgress) {
