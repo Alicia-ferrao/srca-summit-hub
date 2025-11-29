@@ -24,13 +24,18 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [participantesRes, comunicacoesRes] = await Promise.all([
-        supabase.from("participantes").select("*").order("criadoEm", { ascending: false }),
-        supabase.from("comunicacoes").select("*").order("criadoEm", { ascending: false }),
-      ]);
+      const { data, error } = await supabase.functions.invoke("get-dashboard-stats");
 
-      if (participantesRes.data) setParticipantes(participantesRes.data);
-      if (comunicacoesRes.data) setComunicacoes(comunicacoesRes.data);
+      if (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast.error("Erro ao carregar dados do dashboard");
+        return;
+      }
+
+      if (data) {
+        setParticipantes(data.participantes || []);
+        setComunicacoes(data.comunicacoes || []);
+      }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast.error("Erro ao carregar dados");
