@@ -47,33 +47,27 @@ export const participantesService = {
   },
 
   async getByEmail(email: string) {
-    const { data, error } = await supabase
-      .from("participantes")
-      .select("*")
-      .eq("email", email.toLowerCase())
-      .maybeSingle();
+    // Usar edge function para verificar participante (seguro via service_role)
+    const { data, error } = await supabase.functions.invoke("check-participant-type", {
+      body: { email: email.toLowerCase() },
+    });
 
     if (error) throw error;
-    return data;
+    return data?.participante || null;
   },
 
   async getAll() {
-    const { data, error } = await supabase
-      .from("participantes")
-      .select("*")
-      .order("criadoEm", { ascending: false });
-
+    // Admin dashboard deve usar edge function
+    const { data, error } = await supabase.functions.invoke("get-dashboard-stats");
     if (error) throw error;
-    return data;
+    return data?.participantes || [];
   },
 
   async count() {
-    const { count, error } = await supabase
-      .from("participantes")
-      .select("*", { count: "exact", head: true });
-
+    // Admin dashboard deve usar edge function
+    const { data, error } = await supabase.functions.invoke("get-dashboard-stats");
     if (error) throw error;
-    return count || 0;
+    return data?.stats?.participantesCount || 0;
   },
 };
 
@@ -113,22 +107,17 @@ export const comunicacoesService = {
   },
 
   async getAll() {
-    const { data, error } = await supabase
-      .from("comunicacoes")
-      .select("*")
-      .order("criadoEm", { ascending: false });
-
+    // Admin dashboard deve usar edge function
+    const { data, error } = await supabase.functions.invoke("get-dashboard-stats");
     if (error) throw error;
-    return data;
+    return data?.comunicacoes || [];
   },
 
   async count() {
-    const { count, error } = await supabase
-      .from("comunicacoes")
-      .select("*", { count: "exact", head: true });
-
+    // Admin dashboard deve usar edge function
+    const { data, error } = await supabase.functions.invoke("get-dashboard-stats");
     if (error) throw error;
-    return count || 0;
+    return data?.stats?.comunicacoesCount || 0;
   },
 
   async uploadFile(file: File, onProgress?: (progress: number) => void) {
