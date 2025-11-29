@@ -14,17 +14,29 @@ export default function SuccessPaper() {
 
   useEffect(() => {
     const fetchComunicacao = async () => {
-      if (!id) return;
-
-      const { data, error } = await supabase
-        .from("comunicacoes")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (!error && data) {
-        setComunicacao(data);
+      if (!id) {
+        setLoading(false);
+        return;
       }
+
+      try {
+        const { data, error } = await supabase.functions.invoke('get-communication', {
+          body: { id }
+        });
+
+        if (error) {
+          console.error('Erro ao buscar comunicação:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (data?.comunicacao) {
+          setComunicacao(data.comunicacao);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar comunicação:', error);
+      }
+      
       setLoading(false);
     };
 
